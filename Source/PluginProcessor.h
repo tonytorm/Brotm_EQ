@@ -54,7 +54,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
-    juce::AudioProcessorValueTreeState APVTS(*this, nullptr, "Parameters", createParameterLayout());
+    juce::AudioProcessorValueTreeState APVTS {*this, nullptr, "Parameters", createParameterLayout()};
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Brotm_EQAudioProcessor)
