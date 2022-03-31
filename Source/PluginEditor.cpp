@@ -11,10 +11,14 @@
 
 //==============================================================================
 Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+    : AudioProcessorEditor (&p), audioProcessor (p), peakFreqSliderAttachment(audioProcessor.APVTS, "Peak Freq", peakFreqSlider),
+                                                     peakGainSliderAttachment(audioProcessor.APVTS, "Peak Gain", peakGainSlider),
+                                                     peakQualitySliderAttachment(audioProcessor.APVTS, "Peak Quality", peakQualitySlider),
+                                                     lowCutFreqSliderAttachment(audioProcessor.APVTS, "LowCut Freq", lowCutFreqSlider),
+                                                     lowCutSlopeSliderAttachment(audioProcessor.APVTS, "LowCut Slope", lowCutSlopeSlider),
+                                                     highCutFreqSliderAttachment(audioProcessor.APVTS, "HighCut Freq", highCutFreqSlider),
+                                                     highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlopeSlider)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
     for (auto* comp : getComps())
     {
         addAndMakeVisible(comp);
