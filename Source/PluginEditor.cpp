@@ -24,11 +24,24 @@ Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcess
         addAndMakeVisible(comp);
     }
     
+    const auto& params = audioProcessor.getParameters();
+    for ( auto param : params )
+    {
+        param->addListener(this);
+    }
+    
     setSize (600, 400);
+    startTimerHz(60);
 }
 
 Brotm_EQAudioProcessorEditor::~Brotm_EQAudioProcessorEditor()
 {
+    const auto& params = audioProcessor.getParameters();
+    
+    for ( auto param : params )
+    {
+        param->removeListener(this);
+    }
 }
 
 //==============================================================================
@@ -146,6 +159,9 @@ void Brotm_EQAudioProcessorEditor::timerCallback()
 {
     if ( parametersChanged.compareAndSetBool(false, true) )
     {
-        
+        auto chainSettings = getChainSettings(audioProcessor.APVTS);
+        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+        repaint();
     }
 }
