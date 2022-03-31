@@ -19,31 +19,45 @@ struct CustomRotarySlider : juce::Slider
         
     }
 };
+
+struct ResponseCurveComponent: juce::AudioProcessorParameter::Listener,
+                               juce::Timer,
+                               juce::Component
+{
+    ResponseCurveComponent(Brotm_EQAudioProcessor&);
+    ~ResponseCurveComponent();
+    void timerCallback() override;
+    void parameterValueChanged (int parameterIndex, float newValue) override;
+    void parameterGestureChanged (int parameterIndex, bool gestureIsStarting) override { };
+    void paint(juce::Graphics& g) override;
+    
+private:
+    
+    Brotm_EQAudioProcessor& audioProcessor;
+    juce::Atomic<bool> parametersChanged { false };
+    MonoChain monoChain;
+};
+
+
 //==============================================================================
 /**
 */
-class Brotm_EQAudioProcessorEditor  : public juce::AudioProcessorEditor,
-                                      public juce::AudioProcessorParameter::Listener,
-                                      public juce::Timer
+class Brotm_EQAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
     Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor&);
     ~Brotm_EQAudioProcessorEditor() override;
-    
-    void parameterValueChanged (int parameterIndex, float newValue) override;
-    void parameterGestureChanged (int parameterIndex, bool gestureIsStarting) override { };
 
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
-    void timerCallback() override;
 
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     Brotm_EQAudioProcessor& audioProcessor;
     
-    juce::Atomic<bool> parametersChanged { false };
+
 
     CustomRotarySlider peakFreqSlider,
                        peakGainSlider,
@@ -66,7 +80,8 @@ private:
     
     std::vector<juce::Component*> getComps();
     
-    MonoChain monoChain;
+
+    ResponseCurveComponent responseCurveComponent;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Brotm_EQAudioProcessorEditor)
 };

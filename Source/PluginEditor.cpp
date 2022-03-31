@@ -8,33 +8,18 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
-//==============================================================================
-Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), peakFreqSliderAttachment(audioProcessor.APVTS, "Peak Freq", peakFreqSlider),
-                                                     peakGainSliderAttachment(audioProcessor.APVTS, "Peak Gain", peakGainSlider),
-                                                     peakQualitySliderAttachment(audioProcessor.APVTS, "Peak Quality", peakQualitySlider),
-                                                     lowCutFreqSliderAttachment(audioProcessor.APVTS, "LowCut Freq", lowCutFreqSlider),
-                                                     lowCutSlopeSliderAttachment(audioProcessor.APVTS, "LowCut Slope", lowCutSlopeSlider),
-                                                     highCutFreqSliderAttachment(audioProcessor.APVTS, "HighCut Freq", highCutFreqSlider),
-                                                     highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlopeSlider)
+ResponseCurveComponent::ResponseCurveComponent(Brotm_EQAudioProcessor& p) : audioProcessor(p)
 {
-    for (auto* comp : getComps())
-    {
-        addAndMakeVisible(comp);
-    }
-    
     const auto& params = audioProcessor.getParameters();
     for ( auto param : params )
     {
         param->addListener(this);
     }
     
-    setSize (600, 400);
     startTimerHz(60);
 }
 
-Brotm_EQAudioProcessorEditor::~Brotm_EQAudioProcessorEditor()
+ResponseCurveComponent::~ResponseCurveComponent()
 {
     const auto& params = audioProcessor.getParameters();
     
@@ -44,14 +29,12 @@ Brotm_EQAudioProcessorEditor::~Brotm_EQAudioProcessorEditor()
     }
 }
 
-//==============================================================================
-void Brotm_EQAudioProcessorEditor::paint (juce::Graphics& g)
+void ResponseCurveComponent::paint(juce::Graphics& g)
 {
     using namespace juce;
     g.fillAll(Colours::black);
     
-    auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    auto responseArea = getLocalBounds();
     auto w = responseArea.getWidth();
     
     auto& lowCut = monoChain.get<ChainPositions::LowCut>();
@@ -114,7 +97,58 @@ void Brotm_EQAudioProcessorEditor::paint (juce::Graphics& g)
     
     g.setColour(Colours::white);
     g.strokePath(responseCurve, PathStrokeType(2.0f));
+}
 
+void ResponseCurveComponent::parameterValueChanged (int parameterIndex, float newValue)
+{
+    parametersChanged.set(true);
+}
+
+void ResponseCurveComponent::timerCallback()
+{
+    if ( parametersChanged.compareAndSetBool(false, true) )
+    {
+        auto chainSettings = getChainSettings(audioProcessor.APVTS);
+        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+        
+        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+        
+        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+        
+        repaint();
+    }
+}
+//==============================================================================
+Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor& p)
+    : AudioProcessorEditor (&p), audioProcessor (p), responseCurveComponent(audioProcessor),                                                                                            peakFreqSliderAttachment(audioProcessor.APVTS, "Peak Freq", peakFreqSlider),
+                                                     peakGainSliderAttachment(audioProcessor.APVTS, "Peak Gain", peakGainSlider),
+                                                     peakQualitySliderAttachment(audioProcessor.APVTS, "Peak Quality", peakQualitySlider),
+                                                     lowCutFreqSliderAttachment(audioProcessor.APVTS, "LowCut Freq", lowCutFreqSlider),
+                                                     lowCutSlopeSliderAttachment(audioProcessor.APVTS, "LowCut Slope", lowCutSlopeSlider),
+                                                     highCutFreqSliderAttachment(audioProcessor.APVTS, "HighCut Freq", highCutFreqSlider),
+                                                     highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlopeSlider)
+{
+    for (auto* comp : getComps())
+    {
+        addAndMakeVisible(comp);
+    }
+    
+    
+    setSize (600, 400);
+}
+
+Brotm_EQAudioProcessorEditor::~Brotm_EQAudioProcessorEditor()
+{
+}
+
+//==============================================================================
+void Brotm_EQAudioProcessorEditor::paint (juce::Graphics& g)
+{
+    using namespace juce;
+    g.fillAll(Colours::black);
 }
 
 void Brotm_EQAudioProcessorEditor::resized()
@@ -124,6 +158,8 @@ void Brotm_EQAudioProcessorEditor::resized()
     
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
+    
+    responseCurveComponent.setBounds(responseArea);
     
     lowCutFreqSlider.setBounds(lowCutArea.removeFromTop(lowCutArea.getHeight() * 0.5));
     lowCutSlopeSlider.setBounds(lowCutArea);
@@ -146,29 +182,8 @@ std::vector<juce::Component*> Brotm_EQAudioProcessorEditor::getComps()
         &lowCutFreqSlider,
         &highCutFreqSlider,
         &lowCutSlopeSlider,
-        &highCutSlopeSlider
+        &highCutSlopeSlider,
+        &responseCurveComponent
     };
 }
 
-void Brotm_EQAudioProcessorEditor::parameterValueChanged (int parameterIndex, float newValue)
-{
-    parametersChanged.set(true);
-}
-
-void Brotm_EQAudioProcessorEditor::timerCallback()
-{
-    if ( parametersChanged.compareAndSetBool(false, true) )
-    {
-        auto chainSettings = getChainSettings(audioProcessor.APVTS);
-        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
-        
-        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
-        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
-        
-        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
-        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
-        
-        repaint();
-    }
-}
