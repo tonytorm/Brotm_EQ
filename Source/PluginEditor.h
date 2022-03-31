@@ -22,20 +22,28 @@ struct CustomRotarySlider : juce::Slider
 //==============================================================================
 /**
 */
-class Brotm_EQAudioProcessorEditor  : public juce::AudioProcessorEditor
+class Brotm_EQAudioProcessorEditor  : public juce::AudioProcessorEditor,
+                                      public juce::AudioProcessorParameter::Listener,
+                                      public juce::Timer
 {
 public:
     Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor&);
     ~Brotm_EQAudioProcessorEditor() override;
+    
+    void parameterValueChanged (int parameterIndex, float newValue) override;
+    void parameterGestureChanged (int parameterIndex, bool gestureIsStarting) override { };
 
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    void timerCallback() override;
 
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     Brotm_EQAudioProcessor& audioProcessor;
+    
+    juce::Atomic<bool> parametersChanged { false };
 
     CustomRotarySlider peakFreqSlider,
                        peakGainSlider,
