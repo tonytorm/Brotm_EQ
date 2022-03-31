@@ -215,12 +215,6 @@ Coefficients makePeakFilter (const ChainSettings& chainSettings, double sampleRa
 
 void Brotm_EQAudioProcessor::updatePeakFilter(const ChainSettings &chainSettings)
 {
-//    auto peakCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(getSampleRate(),
-//                                                                                chainSettings.peakFreq,
-//                                                                                chainSettings.peakQuality,
-//                                                                                juce::Decibels::decibelsToGain //->
-//                                                                                (chainSettings.peakGainInDecibels));
-//
     auto peakCoefficients = makePeakFilter(chainSettings, getSampleRate());
     updateCoefficients(leftChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
     updateCoefficients(rightChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
