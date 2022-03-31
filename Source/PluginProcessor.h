@@ -30,6 +30,17 @@ struct ChainSettings
 
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts);
 
+using Filter = juce::dsp::IIR::Filter<float>;
+using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
+using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>;
+
+enum ChainPositions
+  {
+      LowCut,
+      Peak,
+      HighCut
+  };
+
 class Brotm_EQAudioProcessor  : public juce::AudioProcessor
 {
 public:
@@ -72,26 +83,13 @@ public:
 
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::AudioProcessorValueTreeState APVTS {*this, nullptr, "Parameters", createParameterLayout()};
+    
 private:
-    using Filter = juce::dsp::IIR::Filter<float>;
-    using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
-    using MonoChain = juce::dsp::ProcessorChain<CutFilter, Filter, CutFilter>;
-    
     MonoChain leftChain, rightChain;
-    
-    enum ChainPositions
-    {
-        LowCut,
-        Peak,
-        HighCut
-    };
     
     void updatePeakFilter(const ChainSettings& chainSettings);
     using Coefficients = Filter::CoefficientsPtr;
     static void updateCoefficients(Coefficients& old, const Coefficients& replacements);
-    
-    
-    
     
     // ============================================ TEMPLATED HELPER FUNCTIONS
     template<int Index, typename ChainType, typename CoefficientType>
@@ -104,7 +102,6 @@ private:
     template<typename ChainType, typename CoefficientType>
     void updateCutFilter(ChainType& chain, const CoefficientType& coefficients, const Slope& slope)
     {
-        
         chain.template setBypassed<0>(true);
         chain.template setBypassed<1>(true);
         chain.template setBypassed<2>(true);
