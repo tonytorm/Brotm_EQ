@@ -123,17 +123,27 @@ void ResponseCurveComponent::timerCallback()
 }
 //==============================================================================
 Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p), responseCurveComponent(audioProcessor),                                                                                            peakFreqSliderAttachment(audioProcessor.APVTS, "Peak Freq", peakFreqSlider),
-                                                     peakGainSliderAttachment(audioProcessor.APVTS, "Peak Gain", peakGainSlider),
-                                                     peakQualitySliderAttachment(audioProcessor.APVTS, "Peak Quality", peakQualitySlider),
-                                                     lowCutFreqSliderAttachment(audioProcessor.APVTS, "LowCut Freq", lowCutFreqSlider),
-                                                     lowCutSlopeSliderAttachment(audioProcessor.APVTS, "LowCut Slope", lowCutSlopeSlider),
-                                                     highCutFreqSliderAttachment(audioProcessor.APVTS, "HighCut Freq", highCutFreqSlider),
-                                                     highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlopeSlider)
+    : AudioProcessorEditor (&p), audioProcessor (p),
+peakFreqSlider(*audioProcessor.APVTS.getParameter("Peak Freq"), "Hz"),
+peakGainSlider(*audioProcessor.APVTS.getParameter("Peak Gain"), "dB"),
+peakQualitySlider(*audioProcessor.APVTS.getParameter("Peak Quality"), "Q"),
+lowCutFreqSlider(*audioProcessor.APVTS.getParameter("LowCut Freq"), "Hz"),
+highCutFreqSlider(*audioProcessor.APVTS.getParameter("HighCut Freq"), "Hz"),
+lowCutSlopeSlider(*audioProcessor.APVTS.getParameter("LowCut Slope"), "dB/Oct"),
+highCutSlopeSlider(*audioProcessor.APVTS.getParameter("HighCut Slope"), "dB/Oct"),
+responseCurveComponent(audioProcessor),
+peakFreqSliderAttachment(audioProcessor.APVTS, "Peak Freq", peakFreqSlider),
+peakGainSliderAttachment(audioProcessor.APVTS, "Peak Gain", peakGainSlider),
+peakQualitySliderAttachment(audioProcessor.APVTS, "Peak Quality", peakQualitySlider),
+lowCutFreqSliderAttachment(audioProcessor.APVTS, "LowCut Freq", lowCutFreqSlider),
+highCutFreqSliderAttachment(audioProcessor.APVTS, "HighCut Freq", highCutFreqSlider),
+lowCutSlopeSliderAttachment(audioProcessor.APVTS, "LowCut Slope", lowCutSlopeSlider),
+highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlopeSlider)
 {
     for (auto* comp : getComps())
     {
         addAndMakeVisible(comp);
+       
     }
     
     

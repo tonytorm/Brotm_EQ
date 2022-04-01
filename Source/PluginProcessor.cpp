@@ -22,6 +22,7 @@ Brotm_EQAudioProcessor::Brotm_EQAudioProcessor()
                        )
 #endif
 {
+ 
 }
 
 Brotm_EQAudioProcessor::~Brotm_EQAudioProcessor()
