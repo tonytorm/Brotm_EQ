@@ -65,6 +65,7 @@ struct ResponseCurveComponent: juce::AudioProcessorParameter::Listener,
     void parameterValueChanged (int parameterIndex, float newValue) override;
     void parameterGestureChanged (int parameterIndex, bool gestureIsStarting) override { };
     void paint(juce::Graphics& g) override;
+    void updateChain();
     
 private:
     

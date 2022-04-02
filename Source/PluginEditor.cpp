@@ -169,6 +169,7 @@ ResponseCurveComponent::ResponseCurveComponent(Brotm_EQAudioProcessor& p) : audi
         param->addListener(this);
     }
     
+    updateChain();
     startTimerHz(60);
 }
 
@@ -261,20 +262,23 @@ void ResponseCurveComponent::timerCallback()
 {
     if ( parametersChanged.compareAndSetBool(false, true) )
     {
-        auto chainSettings = getChainSettings(audioProcessor.APVTS);
-        auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
-        updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
-        
-        auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
-        auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
-        
-        updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
-        updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
-        
+        updateChain();
         repaint();
     }
 }
 
+void ResponseCurveComponent::updateChain()
+{
+    auto chainSettings = getChainSettings(audioProcessor.APVTS);
+    auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+    updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
+    
+    auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
+    auto highCutCoefficients = makeHighCutFilter(chainSettings, audioProcessor.getSampleRate());
+    
+    updateCutFilter(monoChain.get<ChainPositions::LowCut>(), lowCutCoefficients, chainSettings.lowCutSlope);
+    updateCutFilter(monoChain.get<ChainPositions::HighCut>(), highCutCoefficients, chainSettings.highCutSlope);
+}
 
 //==================================================================================================================================
 Brotm_EQAudioProcessorEditor::Brotm_EQAudioProcessorEditor (Brotm_EQAudioProcessor& p)
@@ -297,6 +301,21 @@ highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlope
 {
     peakFreqSlider.labels.add({0.f, "20Hz"});
     peakFreqSlider.labels.add({1.f, "20kHz"});
+    peakQualitySlider.labels.add({0.f, "0.1"});
+    peakQualitySlider.labels.add({1.f, "10"});
+    peakGainSlider.labels.add({0.f, "-24dB"});
+    peakGainSlider.labels.add({1.f, "24dB"});
+    
+    lowCutFreqSlider.labels.add({0.f, "20Hz"});
+    lowCutFreqSlider.labels.add({1.f, "20kHz"});
+    lowCutSlopeSlider.labels.add({0.f, "12"});
+    lowCutSlopeSlider.labels.add({1.f, "48"});
+    
+    highCutFreqSlider.labels.add({0.f, "20Hz"});
+    highCutFreqSlider.labels.add({1.f, "20kHz"});
+    highCutSlopeSlider.labels.add({0.f, "12"});
+    highCutSlopeSlider.labels.add({1.f, "48"});
+    
     
     for (auto* comp : getComps())
     {
@@ -305,7 +324,7 @@ highCutSlopeSliderAttachment(audioProcessor.APVTS, "HighCut Slope", highCutSlope
     }
     
     
-    setSize (600, 400);
+    setSize (600, 480);
 }
 
 Brotm_EQAudioProcessorEditor::~Brotm_EQAudioProcessorEditor()
@@ -322,12 +341,16 @@ void Brotm_EQAudioProcessorEditor::paint (juce::Graphics& g)
 void Brotm_EQAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.25);
+    
+    bounds.removeFromTop(5);
     
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
     
     responseCurveComponent.setBounds(responseArea);
+    
+    
     
     lowCutFreqSlider.setBounds(lowCutArea.removeFromTop(lowCutArea.getHeight() * 0.5));
     lowCutSlopeSlider.setBounds(lowCutArea);
