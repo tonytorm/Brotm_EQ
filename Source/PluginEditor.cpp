@@ -129,7 +129,6 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const
 
 juce::String RotarySliderWithLabels::getDisplayString() const
 {
-    //return juce::String(getValue());
     if (auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param))
         return choiceParam->getCurrentChoiceName();
     juce::String str;
@@ -300,12 +299,11 @@ void ResponseCurveComponent::resized()
     for (auto gDb : gain)
     {
         auto y = jmap(gDb, -24.f, 24.f, (float)bottom, (float)top);
-       // g.drawHorizontalLine(Y, 0, getWidth());
-        
+
         g.setColour(gDb == 0 ? Colour(0u, 172u, 1u) : Colours::darkgrey);
         g.drawHorizontalLine(y, left, right);
     }
-    //g.drawRect(getAnalysisArea());
+
     
     g.setColour(Colours::lightgrey);
     const int fontHeight = 10;
@@ -358,6 +356,15 @@ void ResponseCurveComponent::resized()
            
            g.setColour(gDb == 0 ? Colour(0u, 172u, 1u) : Colours::lightgrey);
            
+           g.drawFittedText(str, r, Justification::centred, 1);
+           
+           str.clear();
+           str << (gDb - 24.f);
+           
+           r.setX(1);
+           textWidth = g.getCurrentFont().getStringWidth(str);
+           r.setSize(textWidth, fontHeight);
+           g.setColour(Colours::lightgrey);
            g.drawFittedText(str, r, Justification::centred, 1);
            
        }
