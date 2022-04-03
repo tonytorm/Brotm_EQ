@@ -65,6 +65,7 @@ struct ResponseCurveComponent: juce::AudioProcessorParameter::Listener,
     void parameterValueChanged (int parameterIndex, float newValue) override;
     void parameterGestureChanged (int parameterIndex, bool gestureIsStarting) override { };
     void paint(juce::Graphics& g) override;
+    void resized() override;
     void updateChain();
     
 private:
@@ -72,6 +73,10 @@ private:
     Brotm_EQAudioProcessor& audioProcessor;
     juce::Atomic<bool> parametersChanged { false };
     MonoChain monoChain;
+    juce::Image background;
+    
+    juce::Rectangle<int> getRenderArea();
+    juce::Rectangle<int> getAnalysisArea();
 };
 
 
