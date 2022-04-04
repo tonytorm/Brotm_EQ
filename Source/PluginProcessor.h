@@ -13,8 +13,104 @@
 //==============================================================================
 /**
 */
+template<typename T>
+struct Fifo
+{
+    void prepare (int numChannels, int numSamples)
+    {
+        for (auto& buffer : buffers)
+        {
+            buffer.setSize(numChannels, numSamples, false, true, true);
+            buffer.clear();
+        }
+    }
+    
+    bool push(const T& t)
+    {
+        auto write = fifo.write(1);
+        if (write.blockSize1 > 0)
+        {
+            buffers[write.startIndex] = t;
+            return true;
+        }
+        return false;
+    }
+    
+    int getNumAvailableForReading() const
+    {
+        return fifo.getNumReady();
+    }
+private:
+    static constexpr int Capacity = 30;
+    std::array<T, Capacity> buffers;
+    juce::AbstractFifo fifo {Capacity};
+    
+};
 
 
+enum Channel
+{
+    Right,
+    Left
+};
+
+template<typename BlockType>
+struct SingleChannelSampleFifo
+{
+    SingleChannelSampleFifo(Channel ch) : channelToUse(ch)
+    {
+        prepared.set(false);
+    }
+    
+    void update(const BlockType& buffer)
+    {
+        jassert(prepared.get());
+        jussert(buffer.getNumChannels() > channelToUse);
+        auto* channelPtr = buffer.getReadPointer(channelToUse);
+        
+        for (int i = 0; i < buffer.getNumSamples(); i++)
+        {
+            pushNextSampleIntoFifo(channelPtr[i]);
+        }
+    }
+    
+    void prepare(int bufferSize)
+    {
+        prepared.set(false);
+        size.set(bufferSize);
+        bufferToFill.setSize(1, bufferSize, false, true, true);
+        audioBufferFifo.prepare(1, bufferSize);
+        fifoIndex = 0;
+        prepared.set(true);
+    }
+    int getNumCompleteBuffersAvailable() const {return audioBufferFifo.getNumAvailableForReading(); };
+    bool isPrepared() const { return prepared.get(); };
+    int getSize() const { return size.get(); };
+    bool getAudioBuffer(BlockType& buf) { return audioBufferFifo.pull(buf); };
+    
+private:
+    Channel channelToUse;
+    int fifoIndex = 0;
+    Fifo<BlockType> audioBufferFifo;
+    BlockType bufferToFill;
+    
+    juce::Atomic<bool> prepared = false;
+    juce::Atomic<int> size = 0;
+    
+    void pushNextSampleIntoFifo(float sample)
+    {
+        if (fifoIndex == bufferToFill.getNumSamples())
+        {
+            auto ok = audioBufferFifo.push(bufferToFill);
+            
+            juce::ignoreUnused(ok);
+            
+            fifoIndex = 0;
+        }
+        bufferToFill.setSample(0, fifoIndex, sample);
+        fifoIndex++;
+    }
+};
 
 enum Slope
 {
@@ -141,6 +237,7 @@ public:
 
     juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     juce::AudioProcessorValueTreeState APVTS {*this, nullptr, "Parameters", createParameterLayout()};
+    
     
 private:
     MonoChain leftChain, rightChain;
