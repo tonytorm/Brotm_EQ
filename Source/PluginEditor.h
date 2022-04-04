@@ -11,6 +11,13 @@
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
+enum FFTOrder
+{
+    order2048 = 11,
+    order4096 = 12,
+    order8192 = 13
+};
+
 struct LookAndFeel : juce::LookAndFeel_V4
 {
     void drawRotarySlider (juce::Graphics&,
@@ -77,6 +84,12 @@ private:
     
     juce::Rectangle<int> getRenderArea();
     juce::Rectangle<int> getAnalysisArea();
+    
+    SingleChannelSampleFifo<Brotm_EQAudioProcessor::BlockType>* leftChannelFifo;
+    
+    juce::AudioBuffer<float> monoBuffer;
+    
+    
 };
 
 

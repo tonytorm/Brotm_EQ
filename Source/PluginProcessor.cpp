@@ -103,6 +103,9 @@ void Brotm_EQAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     rightChain.prepare(spec);
     
     updateFilters();
+    
+    leftChannelFifo.prepare(samplesPerBlock);
+    rightChannelFifo.prepare(samplesPerBlock);
 }
 
 void Brotm_EQAudioProcessor::releaseResources()
@@ -158,6 +161,9 @@ void Brotm_EQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     
     leftChain.process(leftContext);
     rightChain.process(rightContext);
+    
+    leftChannelFifo.update(buffer);
+    rightChannelFifo.update(buffer);
     
     
 }
