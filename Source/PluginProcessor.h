@@ -18,10 +18,23 @@ struct Fifo
 {
     void prepare (int numChannels, int numSamples)
     {
+        static_assert(std::is_same_v<T, juce::AudioBuffer<float>>, "sike");
+        
         for (auto& buffer : buffers)
         {
             buffer.setSize(numChannels, numSamples, false, true, true);
             buffer.clear();
+        }
+    }
+    
+    void prepare(size_t numElements)
+    {
+        static_assert(std::is_same_v<T, std::vector<float>>, "sike");
+        
+        for (auto buffer : buffers)
+        {
+            buffer.clear();
+            buffer.resize(numElements, 0);
         }
     }
     
@@ -30,9 +43,21 @@ struct Fifo
         auto write = fifo.write(1);
         if (write.blockSize1 > 0)
         {
-            buffers[write.startIndex] = t;
+            buffers[write.startIndex1] = t;
             return true;
         }
+        return false;
+    }
+    
+    bool pull(T& t)
+    {
+        auto read = fifo.read(1);
+        if (read.blockSize1 > 0)
+        {
+            t = buffers[read.startIndex1];
+            return true;
+        }
+        
         return false;
     }
     
@@ -65,7 +90,7 @@ struct SingleChannelSampleFifo
     void update(const BlockType& buffer)
     {
         jassert(prepared.get());
-        jussert(buffer.getNumChannels() > channelToUse);
+        jassert(buffer.getNumChannels() > channelToUse);
         auto* channelPtr = buffer.getReadPointer(channelToUse);
         
         for (int i = 0; i < buffer.getNumSamples(); i++)

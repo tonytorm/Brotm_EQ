@@ -170,6 +170,9 @@ leftChannelFifo(&audioProcessor.leftChannelFifo)
         param->addListener(this);
     }
     
+    leftChannelFFTDataGenerator.changeOrder(FFTOrder::order2048);
+    monoBuffer.setSize(1, leftChannelFFTDataGenerator.getFFTSize());
+    
     updateChain();
     startTimerHz(60);
 }
@@ -416,7 +419,20 @@ void ResponseCurveComponent::timerCallback()
                                               tempIncomingBuffer.getReadPointer(0, 0),
                                               size);
             
-            
+            leftChannelFFTDataGenerator.produceFFTDataRendering(monoBuffer, -48.f);
+        }
+    }
+    
+    const auto fftBounds = getAnalysisArea().toFloat();
+    const auto fftSize =leftChannelFFTDataGenerator.getFFTSize();
+    const auto binWidth = audioProcessor.getSampleRate() / (double)fftSize;
+    
+    while (leftChannelFFTDataGenerator.getNumAvailableFFTDataBlocks() > 0)
+    {
+        std::vector<float> fftData;
+        if(leftChannelFFTDataGenerator.getFFTData(fftData))
+        {
+            pathProducer.generatePath(fftData, fftBounds, fftSize, binWidth, -48.f);
         }
     }
     
