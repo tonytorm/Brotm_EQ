@@ -251,6 +251,10 @@ void ResponseCurveComponent::paint(juce::Graphics& g)
         responseCurve.lineTo(responseArea.getX() + i, map(mags[i]));
     }
     
+    g.setColour(Colours::blue);
+    g.strokePath(leftChannelFFTPath, PathStrokeType(1));
+    
+    
     g.setColour(Colours::orange);
     g.drawRoundedRectangle(getRenderArea().toFloat(), 4.0f, 1.f);
     
@@ -436,11 +440,19 @@ void ResponseCurveComponent::timerCallback()
         }
     }
     
+    while (pathProducer.getNumPathsAvailable() )
+    {
+        pathProducer.getPath(leftChannelFFTPath);
+    }
+    
+    
+    
     if ( parametersChanged.compareAndSetBool(false, true) )
     {
         updateChain();
-        repaint();
+        //repaint();
     }
+    repaint();
 }
 
 void ResponseCurveComponent::updateChain()
@@ -536,6 +548,8 @@ void Brotm_EQAudioProcessorEditor::resized()
     peakFreqSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.33));
     peakGainSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));
     peakQualitySlider.setBounds(bounds);
+    
+    
                              
 }
 
